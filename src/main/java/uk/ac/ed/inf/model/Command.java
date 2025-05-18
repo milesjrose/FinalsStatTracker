@@ -17,11 +17,16 @@ public class Command {
         }
     }
 
+    public Command(String action, String[] arguments){
+        this.action = action;
+        this.arguments = arguments;
+    }
+
     public String getAction(){
         return action;
     }
 
-    public String[] getArguments(){
+    public String[] getArgs(){
         return arguments;
     }
 }

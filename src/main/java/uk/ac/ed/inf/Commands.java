@@ -28,8 +28,8 @@ public class Commands {
                 case "help", "h" -> help();
                 case "clear", "c" -> clear();
                 case "screenshot", "s" -> saveScreenshot();
-                case "checkEndGame", "ceg" -> checkEndGame(screenshot());
-                case "process", "p" -> process(screenshot());
+                case "checkEndGame", "ceg" -> checkEndGame(command.getArgs());
+                case "process", "p" -> process(command.getArgs());
             }
         }
         else{
@@ -49,7 +49,8 @@ public class Commands {
     }
 
     public static void clear() {
-        System.out.println("Clearing screen...");
+        System.out.println("Clearing screenshots...");
+        Screenshot.clearFiles();
     }
 
     public static void saveScreenshot() {
@@ -64,16 +65,15 @@ public class Commands {
         return screenshot;
     }
 
-    public static boolean checkEndGame(BufferedImage screenshot) {
+    public static boolean checkEndGame(String[] args) {
+        BufferedImage screenshot = args.length>0 ? Screenshot.loadImage(args[0]) : screenshot();
         System.out.println("Checking if end game...");
         boolean isEndGame = EndGameCheck.check(screenshot);
         System.out.println("End game: " + isEndGame);
         return isEndGame;
     }
 
-    public static void process(BufferedImage screenshot){
+    public static void process(String[] args){
         System.out.println("Processing screenshot...");
-        boolean isEndGame = checkEndGame(screenshot);
-        System.out.println("End game: " + isEndGame);
     }
 }

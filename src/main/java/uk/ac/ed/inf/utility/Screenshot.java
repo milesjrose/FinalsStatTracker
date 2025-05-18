@@ -9,6 +9,7 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -80,6 +81,28 @@ public class Screenshot {
             return image;
         } catch (Exception e) {
             System.out.println("Error adding rectangle to image: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static void clearFiles(){
+        File directory = new File("resources/");
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.getName().contains("screenshot")){
+                    file.delete();
+                }
+            }
+        }
+    }
+
+    public static BufferedImage loadImage(String filepath){
+        try{
+            BufferedImage image = ImageIO.read(new File(filepath));
+            return image;
+        } catch (IOException e){
+            System.out.println("Error loading image: " + e.getMessage());
             return null;
         }
     }
