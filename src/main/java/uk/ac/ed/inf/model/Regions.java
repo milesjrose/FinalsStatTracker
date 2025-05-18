@@ -1,4 +1,4 @@
-package uk.ac.ed.inf;
+package uk.ac.ed.inf.model;
 
 import java.awt.Rectangle;
 
@@ -42,6 +42,10 @@ public class Regions {
                 new Rectangle(100, 400, 400, 50),  // P3 stats
                 new Rectangle(500, 400, 100, 50)   // S3 score
         );
+    }
+
+    public static Rectangle getSummaryRegion(){
+        return new Rectangle(155, 40, 240, 60);
     }
 
     public Rectangle[] getRegions(){

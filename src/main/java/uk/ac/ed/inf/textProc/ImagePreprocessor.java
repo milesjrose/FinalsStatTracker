@@ -1,4 +1,4 @@
-package uk.ac.ed.inf;
+package uk.ac.ed.inf.textProc;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;

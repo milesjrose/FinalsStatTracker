@@ -1,4 +1,4 @@
-package uk.ac.ed.inf;
+package uk.ac.ed.inf.utility;
 
 // FileWriterUtil.java
 import java.io.FileWriter;
@@ -17,7 +17,7 @@ public class FileWriterUtil {
             writer.write(stats);
             writer.write("\n\n");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Error writing stats to file: " + e.getMessage());
         }
     }
 }

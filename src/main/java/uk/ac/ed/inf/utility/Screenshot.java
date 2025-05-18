@@ -1,25 +1,27 @@
-package uk.ac.ed.inf;
+package uk.ac.ed.inf.utility;
 
 import java.awt.AWTException;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
 import javax.imageio.ImageIO;
-import java.awt.Rectangle;
 
-public class ScreenshotTaker {
+public class Screenshot {
 
-    public static String captureScreenshot() {
+    public static String saveScreenshot() {
         try {
-            Robot robot = new Robot();
-            java.awt.Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
-            BufferedImage screenshot = robot.createScreenCapture(screenRect);
+            BufferedImage screenshot = getScreenshot();
+            if (screenshot == null){
+                return null;
+            }
 
             // Create a timestamped filename.
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -30,57 +32,54 @@ public class ScreenshotTaker {
 
             ImageIO.write(screenshot, "png", file);
             return file.getAbsolutePath();
-        } catch (AWTException | java.io.IOException e) {
-            e.printStackTrace();
+        } catch (java.io.IOException e) {
+            System.out.println("Error saving screenshot: " + e.getMessage());
             return null;
         }
     }
 
-    public static String cropImage(String imagePath, Rectangle rect) {
+    public static BufferedImage getScreenshot() {
         try {
-            File file = new File(imagePath);
-            BufferedImage originalImage = ImageIO.read(file);
+            Robot robot = new Robot();
+            java.awt.Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+            BufferedImage screenshot = robot.createScreenCapture(screenRect);
+            return screenshot;
+        } catch (AWTException e) {
+            System.out.println("Error getting screenshot: " + e.getMessage());
+            return null;
+        }
+    }
 
+    public static BufferedImage cropImage(BufferedImage originalImage, Rectangle rect) {
+        try {
             // Validate crop dimensions
             if (rect.getX() < 0 || rect.getY() < 0 ||
                     rect.getX() + rect.getWidth() > originalImage.getWidth() ||
                     rect.getY() + rect.getHeight() > originalImage.getHeight()) {
                 throw new IllegalArgumentException("Crop rectangle is out of bounds of the image.");
             }
-
+            
             BufferedImage croppedImage = originalImage.getSubimage(
                     rect.x, rect.y, rect.width, rect.height);
 
-            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            timestamp = timestamp + rect.x + rect.y;
-            String croppedFileName = "resources/cropped_" + timestamp + ".png";
-            File croppedFile = new File(croppedFileName);
-            croppedFile.getParentFile().mkdirs();
-
-            ImageIO.write(croppedImage, "png", croppedFile);
-            return croppedFile.getAbsolutePath();
-        } catch (Exception e) {
-            e.printStackTrace();
+            return croppedImage;
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error cropping image: " + e.getMessage());
             return null;
         }
     }
 
-    public static String addRectangleToImage(String imagePath, Rectangle rect) {
+    public static BufferedImage addRectangleToImage(BufferedImage image, Rectangle rect) {
         try {
-            File file = new File(imagePath);
-            BufferedImage image = ImageIO.read(file);
-
             // Draw the rectangle on the image.
             Graphics2D g2d = image.createGraphics();
             g2d.setColor(Color.RED);
             g2d.setStroke(new BasicStroke(3));
             g2d.drawRect(rect.x, rect.y, rect.width, rect.height);
             g2d.dispose();
-
-            ImageIO.write(image, "png", file);
-            return file.getAbsolutePath();
+            return image;
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Error adding rectangle to image: " + e.getMessage());
             return null;
         }
     }
