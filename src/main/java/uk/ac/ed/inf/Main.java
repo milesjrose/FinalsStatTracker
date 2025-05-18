@@ -8,10 +8,8 @@ import org.jnativehook.NativeHookException;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
-import uk.ac.ed.inf.model.Regions;
 
 public class Main implements NativeKeyListener {
-    static Regions regions;
 
     public static void main(String[] args) {
         // Set Tesseract data path
