@@ -148,8 +148,8 @@ public class Screenshot {
         return null;
     }
 
-    private static BufferedImage fullLoadImage(String filepath){
-        logger.info("Loading image from: " + filepath);
+    public static BufferedImage fullLoadImage(String filepath){
+        logger.debug("Loading image from: " + filepath);
         try{
             BufferedImage image = ImageIO.read(new File(filepath));
             return image;

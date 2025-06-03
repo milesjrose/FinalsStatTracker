@@ -2,12 +2,12 @@ package uk.ac.ed.inf.textProc;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.ed.inf.utility.FileWriterUtil;
+import uk.ac.ed.inf.utility.FileUtil;
 
 
 public class ImageProc {
@@ -39,20 +39,20 @@ public class ImageProc {
         }
 
         // Get strings
-        int i = new Random().nextInt(1000);
         String result = "";
         for (BufferedImage chr : chrs){
             // Preprocess image
             BufferedImage preChr = preprocessForOCR(chr);
             String res = OCR.getInt(preChr);
-            try {
-                Integer.parseInt(res);
-                result += res;
-            } catch (NumberFormatException e){
-                FileWriterUtil.writeImageToFile(preChr, "debug_char_" + i);
-                logger.error("Error parsing int " + i + ": " + res);
+            if (res.isEmpty()){
+                String bestMatch = compareChars(preChr);
+                if (bestMatch.equals("com")){
+                    continue;
+                } else {
+                    result += bestMatch;
+                }
             }
-            i++;
+            result += res;
         }
 
         // Convert to int and return
@@ -64,18 +64,32 @@ public class ImageProc {
         }
     }
 
+    public static String compareChars(BufferedImage unknownChar){
+        // Load templates from resources/templates. Each template is a file with a single char, named after the char.png
+        Map<String, BufferedImage> templates = FileUtil.loadTemplates();
+
+        // Compare unknown character to templates
+        CharacterComparer comparer = new CharacterComparer();
+        String bestMatch = comparer.findBestMatch(unknownChar, templates);
+        System.out.println("Best match: " + bestMatch);
+        return bestMatch;
+    }
+
+    // Preprocess image
     private static BufferedImage preprocess(BufferedImage image){
         // Preprocess image
         image = Preproc.preprocessForOCR(image);
         return image;
     }
 
+    // Preprocess image for OCR
     private static BufferedImage preprocessForOCR(BufferedImage image){
         // Preprocess image
         image = Preproc2.preprocessForOCR(image, 2, 10);
         return image;
     }
 
+    // Segment chars
     private static List<BufferedImage> segmentChars(BufferedImage image){
         // Segment chars
         return Preproc3.segmentCharacters(image);

@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
-import uk.ac.ed.inf.utility.FileWriterUtil;
+import uk.ac.ed.inf.utility.FileUtil;
 
 public class OCR {
     private static final Logger logger = LoggerFactory.getLogger(OCR.class);
@@ -42,7 +42,7 @@ public class OCR {
             // Rectangle image
             //FileWriterUtil.writeImageToFile(Screenshot.addRectangleToImage(image, region), "resources/debug.png");
             // Preprocessed image   
-            FileWriterUtil.writeDebugImage(imageToProcess, "resources/ocr/debug_" + System.currentTimeMillis() + ".png");
+            FileUtil.writeDebugImage(imageToProcess, "resources/ocr/debug_" + System.currentTimeMillis() + ".png");
         }
 
         try {
