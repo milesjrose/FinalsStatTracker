@@ -7,8 +7,8 @@ import java.util.Map;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
-import org.opencv.core.Mat; // If needed for other operations
-import org.opencv.core.Size;    // If needed for other operations
+import org.opencv.core.Mat;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import nu.pattern.OpenCV;
@@ -21,9 +21,7 @@ public class CharacterComparer {
             OpenCV.loadLocally();
         } catch (Exception e) {
             System.err.println("Failed to load OpenCV native library: " + e.getMessage());
-            e.printStackTrace();
-            // Depending on the application, you might want to throw a runtime exception here
-            // or have a more sophisticated error handling mechanism.
+            throw e;
         }
     }
     // Standard size for all characters before comparison
@@ -170,65 +168,4 @@ public class CharacterComparer {
             return null; // No confident match
         }
     }
-
-    // --- Example Usage (for testing purposes) ---
-    /*
-    public static void main(String[] args) {
-        // This main method is for illustrative testing.
-        // You'd need to load your actual unknown character BufferedImage
-        // and populate a Map<String, BufferedImage> with your templates.
-
-        // 1. Create a dummy unknown character BufferedImage (e.g., a "7")
-        BufferedImage unknownChar = new BufferedImage(30, 30, BufferedImage.TYPE_BYTE_GRAY);
-        Graphics2D gUnk = unknownChar.createGraphics();
-        gUnk.setColor(java.awt.Color.WHITE); // Background
-        gUnk.fillRect(0, 0, 30, 30);
-        gUnk.setColor(java.awt.Color.BLACK); // Text
-        gUnk.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 28));
-        gUnk.drawString("7", 5, 25);
-        gUnk.dispose();
-
-        // 2. Create dummy template BufferedImages
-        Map<String, BufferedImage> templates = new java.util.HashMap<>();
-
-        BufferedImage template7 = new BufferedImage(30, 30, BufferedImage.TYPE_BYTE_GRAY);
-        Graphics2D g7 = template7.createGraphics();
-        g7.setColor(java.awt.Color.WHITE);
-        g7.fillRect(0, 0, 30, 30);
-        g7.setColor(java.awt.Color.BLACK);
-        g7.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 28));
-        g7.drawString("7", 5, 25); // Similar '7'
-        g7.dispose();
-        templates.put("7", template7);
-
-        BufferedImage templateA = new BufferedImage(30, 30, BufferedImage.TYPE_BYTE_GRAY);
-        Graphics2D gA = templateA.createGraphics();
-        gA.setColor(java.awt.Color.WHITE);
-        gA.fillRect(0, 0, 30, 30);
-        gA.setColor(java.awt.Color.BLACK);
-        gA.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 28));
-        gA.drawString("A", 5, 25);
-        gA.dispose();
-        templates.put("A", templateA);
-
-
-        // 3. Perform comparison
-        CharacterComparer comparer = new CharacterComparer();
-        String matchedChar = comparer.findBestMatch(unknownChar, templates);
-
-        if (matchedChar != null) {
-            System.out.println("Best match: " + matchedChar);
-        } else {
-            System.out.println("No confident match found.");
-        }
-
-        // Example of saving a BufferedImage (if you need to inspect them)
-        // try {
-        //     javax.imageio.ImageIO.write(unknownChar, "png", new java.io.File("unknown_char_test.png"));
-        //     javax.imageio.ImageIO.write(template7, "png", new java.io.File("template_7_test.png"));
-        // } catch (java.io.IOException e) {
-        //     e.printStackTrace();
-        // }
-    }
-    */
 }

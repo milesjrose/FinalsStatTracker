@@ -51,7 +51,7 @@ public class Config {
         // For each player
         for (int n = 1; n <= 3; n++){
             // For each stat
-            int offset = n-1*NUM_STATS;
+            //int offset = n-1*NUM_STATS;
             for (int i = 0; i < NUM_STATS; i++){
                 boxes.add(statBox(n, i));
             }

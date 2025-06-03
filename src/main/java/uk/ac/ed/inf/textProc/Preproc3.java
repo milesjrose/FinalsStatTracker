@@ -25,16 +25,11 @@ public class Preproc3 {
             OpenCV.loadLocally();
         } catch (Exception e) {
             System.err.println("Failed to load OpenCV native library: " + e.getMessage());
-            e.printStackTrace();
-            // Depending on the application, you might want to throw a runtime exception here
-            // or have a more sophisticated error handling mechanism.
+            throw e;
         }
     }
 
     // --- Configuration for Contour Filtering ---
-    // These values are illustrative and will likely need tuning based on your specific images (font size, resolution, etc.)
-    // Values are based on the assumption of relatively small characters like in your examples.
-
     // Minimum height of a character in pixels
     private static final int MIN_CHAR_HEIGHT = 8;
     // Maximum height of a character in pixels
@@ -86,9 +81,6 @@ public class Preproc3 {
         // We want white text on black background for findContours to easily pick up objects.
         // THRESH_OTSU helps in automatically finding an optimal global threshold.
         Imgproc.threshold(blurredMat, binaryMat, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
-        // For more complex backgrounds, consider adaptive thresholding:
-        // Imgproc.adaptiveThreshold(blurredMat, binaryMat, 255,
-        //                           Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 5);
 
 
         // 3. Contour Detection
@@ -113,7 +105,6 @@ public class Preproc3 {
                 aspectRatio >= MIN_ASPECT_RATIO && aspectRatio <= MAX_ASPECT_RATIO) {
                 McharacterBoundingBoxes.add(boundingBox);
             } else {
-                // Optional: Log or inspect discarded contours for debugging filter parameters
                 // System.out.println("Discarded contour: Area=" + area + " H=" + boundingBox.height + " W=" + boundingBox.width + " AR=" + aspectRatio);
             }
         }
@@ -152,7 +143,7 @@ public class Preproc3 {
             invertedCharacterMat.copyTo(submat);
 
 
-            BufferedImage charImage = matToBufferedImage(paddedCharMat, BufferedImage.TYPE_BYTE_GRAY);
+            BufferedImage charImage = matToBufferedImage(paddedCharMat);
             if (charImage != null) {
                 characterImages.add(charImage);
             }
@@ -205,7 +196,7 @@ public class Preproc3 {
      * @param bufferedImageType The type of BufferedImage to create (e.g., BufferedImage.TYPE_BYTE_GRAY).
      * @return A BufferedImage.
      */
-    private static BufferedImage matToBufferedImage(Mat mat, int bufferedImageType) {
+    private static BufferedImage matToBufferedImage(Mat mat) {
         if (mat.empty()) {
             System.err.println("Cannot convert Mat to BufferedImage: Mat is empty.");
             return null;
@@ -218,21 +209,26 @@ public class Preproc3 {
         byte[] data = new byte[width * height * channels];
         mat.get(0, 0, data);
 
-        BufferedImage image;
-        if (channels == 1) {
-            // Grayscale
-            image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-            byte[] grayData = new byte[width * height];
-            System.arraycopy(data, 0, grayData, 0, grayData.length);
-            image.getRaster().setDataElements(0, 0, width, height, grayData);
-        } else if (channels == 3) {
-            // BGR to RGB conversion
-            image = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
-            image.getRaster().setDataElements(0, 0, width, height, data);
-        } else {
-            System.err.println("Unsupported number of channels: " + channels);
-            return null;
-        }
+        BufferedImage image = switch (channels) {
+            case 1 -> {
+                // Grayscale
+                BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+                byte[] grayData = new byte[width * height];
+                System.arraycopy(data, 0, grayData, 0, grayData.length);
+                img.getRaster().setDataElements(0, 0, width, height, grayData);
+                yield img;
+            }
+            case 3 -> {
+                // BGR to RGB conversion
+                BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+                img.getRaster().setDataElements(0, 0, width, height, data);
+                yield img;
+            }
+            default -> {
+                System.err.println("Unsupported number of channels: " + channels);
+                yield null;
+            }
+        };
 
         return image;
     }

@@ -64,6 +64,7 @@ public class ImageProc {
         }
     }
 
+    // Compare unknown character to templates
     public static String compareChars(BufferedImage unknownChar){
         // Load templates from resources/templates. Each template is a file with a single char, named after the char.png
         Map<String, BufferedImage> templates = FileUtil.loadTemplates();

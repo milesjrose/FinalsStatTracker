@@ -34,13 +34,13 @@ public class OCR {
     }
 
     // OCR processing
-    private static String proccess(BufferedImage image, Boolean isText, Boolean debug) {
+    private static String proccess(BufferedImage image, Boolean isText) {
         Tesseract tesseract = getTesseract(isText);
         BufferedImage imageToProcess = image;
 
         if (DEBUG) {
             // Rectangle image
-            //FileWriterUtil.writeImageToFile(Screenshot.addRectangleToImage(image, region), "resources/debug.png");
+            // FileWriterUtil.writeImageToFile(Screenshot.addRectangleToImage(image, region), "resources/debug.png");
             // Preprocessed image   
             FileUtil.writeDebugImage(imageToProcess, "resources/ocr/debug_" + System.currentTimeMillis() + ".png");
         }
@@ -58,11 +58,11 @@ public class OCR {
 
     // Public Text OCR
     public static String getText(BufferedImage image){
-        return proccess(image, true, false);
+        return proccess(image, true);
     }
 
     // Public Int OCR
     public static String getInt(BufferedImage image){
-        return proccess(image, false, false);
+        return proccess(image, false);
     }
 }

@@ -159,7 +159,7 @@ public class Preproc2 {
 
         float sumB = 0;
         int wB = 0; // Weight Background
-        int wF = 0; // Weight Foreground
+        int wF; // Weight Foreground
 
         float varMax = 0;
         int threshold = 0;

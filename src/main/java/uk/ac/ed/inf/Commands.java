@@ -2,16 +2,19 @@ package uk.ac.ed.inf;
 
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import uk.ac.ed.inf.checks.EndGameCheck;
 import uk.ac.ed.inf.model.Command;
 import uk.ac.ed.inf.model.Config;
 import uk.ac.ed.inf.model.PlayerStats;
+import uk.ac.ed.inf.textProc.CharacterComparer;
 import uk.ac.ed.inf.textProc.ImageProc;
 import uk.ac.ed.inf.textProc.Preproc3;
-import uk.ac.ed.inf.utility.FileWriterUtil;
+import uk.ac.ed.inf.utility.FileUtil;
 import uk.ac.ed.inf.utility.Screenshot;
 
 public class Commands {
@@ -31,6 +34,7 @@ public class Commands {
         commands.add("sepchars");
         commands.add("getText");
         commands.add("getInt");
+        commands.add("compareChars");
 
         Command command = new Command(inputString);
 
@@ -48,6 +52,7 @@ public class Commands {
                 case "sepchars", "sc" -> separateChars(command.getArgs());
                 case "getText", "gt" -> getText(command.getArgs());
                 case "getInt", "gi" -> getInt(command.getArgs());
+                case "compareChars", "cc" -> compareChars(command.getArgs());
             }
         }
         else{
@@ -195,7 +200,7 @@ public class Commands {
         for (Rectangle region : regions){
             image = Screenshot.addRectangleToImage(image, region);
         }
-        FileWriterUtil.writeImageToFile(image, "debug");
+        FileUtil.writeImageToFile(image, "debug");
     }
 
     public static void separateChars(String[] args){
@@ -210,7 +215,7 @@ public class Commands {
         System.out.println("Found " + characters.size() + " characters.");
 
         for (int i = 0; i < characters.size(); i++) {
-            FileWriterUtil.writeImageToFile(characters.get(i), "debug3_" + i);
+            FileUtil.writeImageToFile(characters.get(i), "debug3_" + i);
         }
 
     }
@@ -233,5 +238,28 @@ public class Commands {
         BufferedImage image = Screenshot.loadImage(args[0]);
         int number = ImageProc.getInt(image);
         System.out.println(number);
+    }
+
+    public static void compareChars(String[] args){
+        if (args.length != 1){
+            System.out.println("Invalid number of arguments");
+            return;
+        }
+        Map<String, BufferedImage> templates = new java.util.HashMap<>();
+
+        // Load templates from resources/templates. Each template is a file with a single char, named after the char.png
+        File templatesDir = new File("resources/templates");
+        for (File template : templatesDir.listFiles()){
+            BufferedImage templateImage = Screenshot.fullLoadImage(template.getAbsolutePath());
+            templates.put(template.getName().split("\\.")[0], templateImage);
+        }
+
+        // Load unknown character
+        BufferedImage unknownChar = Screenshot.loadImage(args[0]);
+
+        // Compare unknown character to templates
+        CharacterComparer comparer = new CharacterComparer();
+        String bestMatch = comparer.findBestMatch(unknownChar, templates);
+        System.out.println("Best match: " + bestMatch);
     }
 }
