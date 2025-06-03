@@ -12,8 +12,14 @@ import uk.ac.ed.inf.utility.FileUtil;
 
 public class OCR {
     private static final Logger logger = LoggerFactory.getLogger(OCR.class);
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
+    /**
+     * Gets a Tesseract instance
+     * 
+     * @param isText Boolean of whether to get a text or number Tesseract instance
+     * @return Tesseract instance
+     */
     private static Tesseract getTesseract(Boolean isText){
         Tesseract tesseract = new Tesseract();
         tesseract.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata");
@@ -33,7 +39,13 @@ public class OCR {
         return tesseract;
     }
 
-    // OCR processing
+    /**
+     * OCR processing
+     * 
+     * @param image BufferedImage of image
+     * @param isText Boolean of whether to get a text or number Tesseract instance
+     * @return String of OCR result
+     */
     private static String proccess(BufferedImage image, Boolean isText) {
         Tesseract tesseract = getTesseract(isText);
         BufferedImage imageToProcess = image;
@@ -56,12 +68,22 @@ public class OCR {
         }
     }
 
-    // Public Text OCR
+    /**
+     * Gets text from an image
+     * 
+     * @param image BufferedImage of image
+     * @return String of text from image
+     */
     public static String getText(BufferedImage image){
         return proccess(image, true);
     }
 
-    // Public Int OCR
+    /**
+     * Gets integers from an image
+     * 
+     * @param image BufferedImage of image
+     * @return String of integers from image
+     */
     public static String getInt(BufferedImage image){
         return proccess(image, false);
     }

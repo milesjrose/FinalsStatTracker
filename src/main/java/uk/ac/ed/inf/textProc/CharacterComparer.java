@@ -91,10 +91,6 @@ public class CharacterComparer {
 
         Mat unknownCharMatResized = new Mat();
         Imgproc.resize(unknownCharMatFull, unknownCharMatResized, TEMPLATE_SIZE);
-        // Optional: If your segmenter doesn't produce perfectly binary images,
-        // you might want to re-threshold here to ensure both unknown and template are binary.
-        // e.g., Imgproc.threshold(unknownCharMatResized, unknownCharMatResized, 128, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
-
 
         String bestMatchLabel = null;
         double bestScore = -Double.MAX_VALUE; // For TM_CCOEFF_NORMED, higher is better

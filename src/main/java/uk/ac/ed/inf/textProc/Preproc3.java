@@ -14,10 +14,14 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import nu.pattern.OpenCV;
 
 public class Preproc3 {
+
+    private static final Logger logger = LoggerFactory.getLogger(Preproc3.class);   
 
     // Static block to load OpenCV native library using the org.openpnp loader
     static {
@@ -78,8 +82,6 @@ public class Preproc3 {
         Imgproc.GaussianBlur(grayMat, blurredMat, new Size(3, 3), 0); // Gentle blur to reduce noise
 
         Mat binaryMat = new Mat();
-        // We want white text on black background for findContours to easily pick up objects.
-        // THRESH_OTSU helps in automatically finding an optimal global threshold.
         Imgproc.threshold(blurredMat, binaryMat, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
 
 
@@ -105,12 +107,12 @@ public class Preproc3 {
                 aspectRatio >= MIN_ASPECT_RATIO && aspectRatio <= MAX_ASPECT_RATIO) {
                 McharacterBoundingBoxes.add(boundingBox);
             } else {
-                // System.out.println("Discarded contour: Area=" + area + " H=" + boundingBox.height + " W=" + boundingBox.width + " AR=" + aspectRatio);
+                logger.info("Discarded contour: Area=" + area + " H=" + boundingBox.height + " W=" + boundingBox.width + " AR=" + aspectRatio);
             }
         }
 
         if (McharacterBoundingBoxes.isEmpty()) {
-            // System.out.println("No character contours found after filtering.");
+            logger.info("No character contours found after filtering.");
             originalMat.release();
             grayMat.release();
             blurredMat.release();
@@ -124,19 +126,19 @@ public class Preproc3 {
 
         // 6. Crop characters and convert to BufferedImage
         for (Rect box : McharacterBoundingBoxes) {
-            // Crop from the binary image (which has white text on black background)
+            // Crop from the binary image
             Mat characterMat = new Mat(binaryMat, box);
 
-            // Invert the character Mat to get black text on white background (common for OCR)
+            // Invert the character Mat to get black text on white background
             Mat invertedCharacterMat = new Mat();
             Core.bitwise_not(characterMat, invertedCharacterMat);
 
-            // Add a small white border/padding (optional, but can help OCR)
+            // Add a small white border/padding                     -- not needed   
             int padding = 2; // 2 pixels padding
             Mat paddedCharMat = new Mat(invertedCharacterMat.rows() + 2 * padding,
                                         invertedCharacterMat.cols() + 2 * padding,
                                         invertedCharacterMat.type(),
-                                        new Scalar(255)); // White background for padding
+                                        new Scalar(255));
 
             Rect roi = new Rect(padding, padding, invertedCharacterMat.cols(), invertedCharacterMat.rows());
             Mat submat = paddedCharMat.submat(roi);

@@ -5,6 +5,12 @@ import java.awt.image.BufferedImage;
 
 public class Preproc {
 
+    /**
+     * Converts an image to a monochrome image
+     * 
+     * @param image BufferedImage of image
+     * @return Monochrome image
+     */
     public static BufferedImage convertToMonochrome(BufferedImage image) {
         BufferedImage monochromeImage = new BufferedImage(
                 image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
@@ -17,6 +23,12 @@ public class Preproc {
         return monochromeImage;
     }
 
+    /**
+     * Computes the average luminance of an image
+     * 
+     * @param image BufferedImage of image
+     * @return Average luminance
+     */
     public static double computeAverageLuminance(BufferedImage image) {
         long sumLuminance = 0;
         int width = image.getWidth();
@@ -38,6 +50,12 @@ public class Preproc {
         return (sumLuminance / totalPixels) / 255.0;
     }
 
+    /**
+     * Inverts an image
+     * 
+     * @param image BufferedImage of image
+     * @return Inverted image
+     */
     public static BufferedImage invertImage(BufferedImage image) {
         BufferedImage invertedImage = new BufferedImage(
                 image.getWidth(), image.getHeight(), image.getType());
@@ -55,6 +73,12 @@ public class Preproc {
         return invertedImage;
     }
 
+    /**
+     * Preprocesses an image for OCR
+     * 
+     * @param image BufferedImage of image
+     * @return Preprocessed image
+     */
     public static BufferedImage preprocessForOCR(BufferedImage image) {
         BufferedImage monochromeImage = convertToMonochrome(image);
         if (computeAverageLuminance(monochromeImage) > 0.5){

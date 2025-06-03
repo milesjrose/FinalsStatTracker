@@ -6,10 +6,20 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.RescaleOp;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 public class Preproc2 {
+
+    private static final Logger logger = LoggerFactory.getLogger(Preproc2.class);
 
     /**
      * Scales the image by a given factor.
+     * 
+     * @param originalImage BufferedImage of image
+     * @param scaleFactor Double of scale factor
+     * @return Scaled image
      */
     public static BufferedImage scaleImage(BufferedImage originalImage, double scaleFactor) {
         if (scaleFactor == 1.0) return originalImage; // No scaling needed
@@ -26,8 +36,6 @@ public class Preproc2 {
 
         Graphics2D g2d = scaledImage.createGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        // For binary images, NEAREST_NEIGHBOR might be better if scaling after binarization,
-        // but we scale before binarization, so BICUBIC is good for grayscale.
         g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
         g2d.dispose();
         return scaledImage;
@@ -35,6 +43,9 @@ public class Preproc2 {
 
     /**
      * Converts an image to grayscale.
+     * 
+     * @param originalImage BufferedImage of image
+     * @return Grayscale image
      */
     public static BufferedImage toGrayscale(BufferedImage originalImage) {
         if (originalImage.getType() == BufferedImage.TYPE_BYTE_GRAY) {
@@ -50,6 +61,9 @@ public class Preproc2 {
     /**
      * Inverts the colors of a grayscale image.
      * White becomes black, black becomes white.
+     * 
+     * @param grayscaleImage BufferedImage of grayscale image
+     * @return Inverted grayscale image
      */
     public static BufferedImage invertGrayscaleImage(BufferedImage grayscaleImage) {
         // First ensure we have a non-indexed image
@@ -67,11 +81,6 @@ public class Preproc2 {
         // Create output image with TYPE_INT_ARGB
         BufferedImage invertedImage = new BufferedImage(nonIndexedImage.getWidth(), nonIndexedImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
         
-        // For RescaleOp, a scale factor of -1.0 and an offset of 255 effectively inverts a grayscale image.
-        // y = scaleFactor * x + offset
-        // y = -1.0 * x + 255
-        // If x = 0 (black), y = 255 (white)
-        // If x = 255 (white), y = 0 (black)
         RescaleOp op = new RescaleOp(-1.0f, 255f, null);
         op.filter(nonIndexedImage, invertedImage);
         return invertedImage;
@@ -80,11 +89,14 @@ public class Preproc2 {
     /**
      * Calculates the average pixel intensity of a grayscale image.
      * Returns a value between 0 (all black) and 255 (all white).
+     * 
+     * @param grayscaleImage BufferedImage of grayscale image
+     * @return Average pixel intensity
      */
     public static double getAveragePixelIntensity(BufferedImage grayscaleImage) {
         if (grayscaleImage.getType() != BufferedImage.TYPE_BYTE_GRAY) {
-            // System.err.println("Warning: getAveragePixelIntensity called on non-grayscale image. Result might be unexpected.");
-            // Or convert it: grayscaleImage = toGrayscale(grayscaleImage);
+            logger.warn("getAveragePixelIntensity called on non-grayscale image. Result might be unexpected.");
+            grayscaleImage = toGrayscale(grayscaleImage);
         }
         long sumIntensity = 0;
         int width = grayscaleImage.getWidth();
@@ -93,8 +105,6 @@ public class Preproc2 {
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                // For TYPE_BYTE_GRAY, getRGB returns the gray value in all R, G, B components.
-                // We can take any of them, e.g., blue component.
                 sumIntensity += (grayscaleImage.getRGB(x, y) & 0xff);
             }
         }
@@ -104,15 +114,19 @@ public class Preproc2 {
     /**
      * Binarizes a grayscale image using a fixed threshold.
      * Pixels darker than threshold become black, others become white.
+     * 
+     * @param grayscaleImage BufferedImage of grayscale image
+     * @param threshold Integer of threshold
+     * @return Binarized image
      */
     public static BufferedImage binarize(BufferedImage grayscaleImage, int threshold) {
         if (grayscaleImage.getType() != BufferedImage.TYPE_BYTE_GRAY) {
-            System.err.println("Warning: binarize called on non-grayscale image. Converting to gray first.");
+            logger.warn("binarize called on non-grayscale image. Converting to gray first.");
             grayscaleImage = toGrayscale(grayscaleImage);
         }
         BufferedImage binaryImage = new BufferedImage(grayscaleImage.getWidth(), grayscaleImage.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
         for (int y = 0; y < grayscaleImage.getHeight(); y++) {
-            for (int x = 0; x < grayscaleImage.getWidth(); x++) { // Corrected: grayscaleImage.getWidth()
+            for (int x = 0; x < grayscaleImage.getWidth(); x++) { 
                 int gray = grayscaleImage.getRGB(x, y) & 0xff;
                 if (gray < threshold) {
                     binaryImage.setRGB(x, y, Color.BLACK.getRGB()); // Text
@@ -127,10 +141,13 @@ public class Preproc2 {
     /**
      * Binarizes a grayscale image using Otsu's method to automatically find the threshold.
      * This is generally more robust than a fixed threshold.
+     * 
+     * @param grayscaleImage BufferedImage of grayscale image
+     * @return Binarized image
      */
     public static BufferedImage otsuBinarize(BufferedImage grayscaleImage) {
         if (grayscaleImage.getType() != BufferedImage.TYPE_BYTE_GRAY) {
-            System.err.println("Warning: otsuBinarize called on non-grayscale image. Converting to gray first.");
+            logger.warn("otsuBinarize called on non-grayscale image. Converting to gray first.");
             grayscaleImage = toGrayscale(grayscaleImage);
         }
         int threshold = getOtsuThreshold(grayscaleImage);
@@ -139,6 +156,9 @@ public class Preproc2 {
 
     /**
      * Calculates the optimal threshold for binarization using Otsu's method.
+     * 
+     * @param grayscaleImage BufferedImage of grayscale image
+     * @return Threshold
      */
     public static int getOtsuThreshold(BufferedImage grayscaleImage) {
         int[] histogram = new int[256];
@@ -185,12 +205,17 @@ public class Preproc2 {
                 threshold = t;
             }
         }
-        return threshold + 1; // +1 can sometimes give slightly better visual results
+        return threshold + 1; // +1 can give better visual results
     }
 
 
     /**
      * Adds padding around the image.
+     * 
+     * @param image BufferedImage of image
+     * @param padding Integer of padding
+     * @param backgroundColor Color of background
+     * @return Padded image
      */
     public static BufferedImage addPadding(BufferedImage image, int padding, Color backgroundColor) {
         if (padding <= 0) return image;
@@ -213,16 +238,21 @@ public class Preproc2 {
     /**
      * Main preprocessing pipeline.
      * Aims to produce a clean, black-text-on-white-background binary image.
+     * 
+     * @param originalImage BufferedImage of image
+     * @param scaleFactor Double of scale factor
+     * @param paddingAmount Integer of padding amount
+     * @return Preprocessed image
      */
     public static BufferedImage preprocessForOCR(BufferedImage originalImage, double scaleFactor, int paddingAmount) {
         BufferedImage currentImage = originalImage;
 
-        // 1. Add padding (especially if the original crop is tight)
+        // 1. Add padding 
         if (paddingAmount > 0) {
             currentImage = addPadding(currentImage, paddingAmount, Color.WHITE); // Pad with white
         }
 
-        // 2. Scale the image (crucial for small characters)
+        // 2. Scale the image 
         if (scaleFactor > 1.0) {
             currentImage = scaleImage(currentImage, scaleFactor);
         }
@@ -235,39 +265,13 @@ public class Preproc2 {
         //    If average intensity is low (<128), it's likely white text on dark bg, or mostly dark.
         //    An average intensity close to 0 is very dark, close to 255 is very light.
         double avgIntensity = getAveragePixelIntensity(currentImage);
-        if (avgIntensity < 120) { // Heuristic: if image is mostly dark, invert it
-                                  // This assumes text is lighter than background in this case
+        if (avgIntensity < 120) { // if image is mostly dark, invert it
             currentImage = invertGrayscaleImage(currentImage);
         }
 
-        // After this step, we assume text is darker than background.
 
         // 5. Binarize using Otsu's method (generally robust)
         currentImage = otsuBinarize(currentImage);
-
-        // 6. Final check & potential inversion for binary image:
-        //    Ensure text is black. If white pixels are fewer than black pixels,
-        //    it means we have white text on black background. So invert.
-        //    (This step might be redundant if step 4 worked perfectly, but it's a good safeguard)
-        //int whitePixels = 0;
-        //int blackPixels = 0;
-        //for (int y = 0; y < currentImage.getHeight(); y++) {
-        //    for (int x = 0; x < currentImage.getWidth(); x++) {
-        //        if ((currentImage.getRGB(x, y) & 0xff) == 255) { // In TYPE_BYTE_BINARY, white is 255
-        //            whitePixels++;
-        //        } else {
-        //            blackPixels++;
-        //        }
-        //    }
-        //}
-        // If black pixels are dominant, we have black text on white.
-        // If white pixels are dominant, we have white text on black background (invert).
-        // This also handles cases where Otsu might invert based on histogram distribution.
-        //if (whitePixels < blackPixels) { // More black pixels than white implies text might be white
-            // This means the dominant color is black (background), so text is white. Invert.
-            //currentImage = invertGrayscaleImage(currentImage); // invertImage works on binary too
-        //}
-
 
         return currentImage;
     }

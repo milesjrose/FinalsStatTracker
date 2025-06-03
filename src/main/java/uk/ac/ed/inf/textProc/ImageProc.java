@@ -13,7 +13,12 @@ import uk.ac.ed.inf.utility.FileUtil;
 public class ImageProc {
     private static final Logger logger = LoggerFactory.getLogger(ImageProc.class);
 
-    // Get text from image
+    /**
+     * Extracts text from an image
+     * 
+     * @param image BufferedImage of text
+     * @return Text from image
+     */
     public static String getText(BufferedImage image){
         // Preprocess image
         image = preprocess(image);
@@ -26,7 +31,13 @@ public class ImageProc {
         }
     }
 
-    // Get int from image (splits into chars to avoid OCR errors)
+    /**
+     * Extracts integers from an image
+     * Splits into chars to reduce OCR errors, and uses comparison to templates as backup.
+     *
+     * @param image BufferedImage of integers
+     * @return Integer from image
+     */
     public static int getInt(BufferedImage image){
         // Preprocess image
         image = preprocess(image);
@@ -64,7 +75,12 @@ public class ImageProc {
         }
     }
 
-    // Compare unknown character to templates
+    /**
+     * Compares an unknown character to templates
+     * 
+     * @param unknownChar BufferedImage of unknown character
+     * @return Best match from templates
+     */
     public static String compareChars(BufferedImage unknownChar){
         // Load templates from resources/templates. Each template is a file with a single char, named after the char.png
         Map<String, BufferedImage> templates = FileUtil.loadTemplates();
@@ -76,27 +92,48 @@ public class ImageProc {
         return bestMatch;
     }
 
-    // Preprocess image
+    /**
+     * Preprocesses an image
+     * 
+     * @param image BufferedImage of image
+     * @return Preprocessed image
+     */
     private static BufferedImage preprocess(BufferedImage image){
         // Preprocess image
         image = Preproc.preprocessForOCR(image);
         return image;
     }
 
-    // Preprocess image for OCR
+    /**
+     * Preprocesses an image for OCR
+     * 
+     * @param image BufferedImage of image
+     * @return Preprocessed image
+     */
     private static BufferedImage preprocessForOCR(BufferedImage image){
         // Preprocess image
         image = Preproc2.preprocessForOCR(image, 2, 10);
         return image;
     }
 
-    // Segment chars
+    /**
+     * Segments characters from an image
+     * 
+     * @param image BufferedImage of image
+     * @return List of BufferedImages of characters
+     */
     private static List<BufferedImage> segmentChars(BufferedImage image){
         // Segment chars
         return Preproc3.segmentCharacters(image);
     }
 
-    // Crop image
+    /**
+     * Crops an image
+     * 
+     * @param image BufferedImage of image
+     * @param region Rectangle of region to crop
+     * @return Cropped image
+     */
     public static BufferedImage crop(BufferedImage image, Rectangle region){
         return image.getSubimage(region.x, region.y, region.width, region.height);
     }
