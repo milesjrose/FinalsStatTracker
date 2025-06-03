@@ -9,14 +9,14 @@ import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
 
+
 public class Main implements NativeKeyListener {
 
     public static void main(String[] args) {
-        // Set Tesseract data path
-        
-        // Disable excessive logging from JNativeHook
-        Logger logger = Logger.getLogger(Main.class.getName());
+        // Disable JNativeHook logging
+        Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
         logger.setLevel(Level.OFF);
+        logger.setUseParentHandlers(false);
 
         try {
             GlobalScreen.registerNativeHook();

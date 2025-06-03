@@ -1,11 +1,16 @@
 package uk.ac.ed.inf;
 
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.ed.inf.checks.EndGameCheck;
 import uk.ac.ed.inf.model.Command;
+import uk.ac.ed.inf.model.Config;
+import uk.ac.ed.inf.model.PlayerStats;
+import uk.ac.ed.inf.textProc.OCR;
+import uk.ac.ed.inf.utility.FileWriterUtil;
 import uk.ac.ed.inf.utility.Screenshot;
 
 public class Commands {
@@ -19,6 +24,9 @@ public class Commands {
         commands.add("screenshot");
         commands.add("checkEndGame");
         commands.add("process");
+        commands.add("autoCheck");
+        commands.add("outPutStats");
+        commands.add("debug");
 
         Command command = new Command(inputString);
 
@@ -30,6 +38,9 @@ public class Commands {
                 case "screenshot", "s" -> saveScreenshot();
                 case "checkEndGame", "ceg" -> checkEndGame(command.getArgs());
                 case "process", "p" -> process(command.getArgs());
+                case "autoCheck", "ac" -> autoCheck();
+                case "outPutStats", "os" -> outPutStats(command.getArgs());
+                case "debug", "d" -> addRegions(command.getArgs());
             }
         }
         else{
@@ -67,13 +78,108 @@ public class Commands {
 
     public static boolean checkEndGame(String[] args) {
         BufferedImage screenshot = args.length>0 ? Screenshot.loadImage(args[0]) : screenshot();
+        if (args.length>0 && args[0].equals("/h")){
+            System.out.println("USAGE: checkEndGame [screenshot_path]");
+            return false;
+        }
         System.out.println("Checking if end game...");
         boolean isEndGame = EndGameCheck.check(screenshot);
         System.out.println("End game: " + isEndGame);
         return isEndGame;
     }
 
+    public static void autoCheck() {
+        System.out.println("Auto checking...");
+        while (true) { 
+            boolean isEndGame = EndGameCheck.check(Screenshot.getScreenshot());
+            if (isEndGame) {
+                System.out.println("--------------------------------- End game detected ---------------------------------");
+            }
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void autoParse(){
+        System.out.println("Auto parsing...");
+        while (true){
+            BufferedImage screenshot = Screenshot.getScreenshot();
+            if (EndGameCheck.check(screenshot)){
+                // Parse the screenshot
+            }
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    public static PlayerStats parseStats(BufferedImage screenshot, int player){
+        System.out.println("Parsing stats...");
+        Rectangle nameBox = Config.nameBox(player);
+        Rectangle[] statBoxes = new Rectangle[Config.NUM_STATS];
+        for (int i = 0; i < Config.NUM_STATS; i++){
+            statBoxes[i] = Config.statBox(player, i);
+        }
+        return new PlayerStats(OCR.getText(screenshot, nameBox), OCR.getInt(screenshot, statBoxes));
+    }
+
+    public static String outPutStats(String[] args){
+        if (args.length != 2){
+            if (args.length == 1 && args[0].equals("/h")){
+                System.out.println("USAGE: outPutStats [screenshot_path] [player]");
+            } else {
+                System.out.println("Invalid number of arguments");
+            }
+            return "";
+        }
+        return outPutStats(Screenshot.loadImage(args[0]), args[1]);
+    }
+
+    public static String outPutStats(BufferedImage screenshot, String player){
+        if (!("123all".contains(player))){
+            System.out.println("Invalid player");
+            return "";
+        }
+        String stats = "";
+        switch (player){
+            case "1" -> stats = parseStats(screenshot, 1).toString();
+            case "2" -> stats = parseStats(screenshot, 2).toString();
+            case "3" -> stats = parseStats(screenshot, 3).toString();
+            case "all" -> {
+                stats = parseStats(screenshot, 1).toString();
+                stats += parseStats(screenshot, 2).toString();
+                stats += parseStats(screenshot, 3).toString();
+            }
+        }
+        System.out.println("--------------------------------- player " + player + " stats ---------------------------------");
+        System.out.println(stats);
+        return stats;
+    }
+
+    public static void loadConfig(){
+        System.out.println("Loading config...");
+    }
+
     public static void process(String[] args){
         System.out.println("Processing screenshot...");
+    }
+
+    public static void addRegions(String[] args){
+        if (args.length != 1){
+            System.out.println("Invalid number of arguments");
+            return;
+        }
+        BufferedImage image = Screenshot.loadImage(args[0]);
+        List<Rectangle> regions = Config.allRegions();
+        for (Rectangle region : regions){
+            image = Screenshot.addRectangleToImage(image, region);
+        }
+        FileWriterUtil.writeImageToFile(image, "debug");
     }
 }

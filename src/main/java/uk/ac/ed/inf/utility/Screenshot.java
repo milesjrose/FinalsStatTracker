@@ -15,7 +15,12 @@ import java.util.Date;
 
 import javax.imageio.ImageIO;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Screenshot {
+
+    private static final Logger logger = LoggerFactory.getLogger(Screenshot.class);
 
     public static String saveScreenshot() {
         try {
@@ -85,19 +90,55 @@ public class Screenshot {
         }
     }
 
+    public static BufferedImage addRectanglesToImage(BufferedImage image, Rectangle[] rects) {
+        BufferedImage debugImage = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
+        Graphics2D g2d = debugImage.createGraphics();
+        g2d.drawImage(image, 0, 0, null);
+        g2d.dispose();
+        for (Rectangle rect : rects){
+            debugImage = addRectangleToImage(debugImage, rect);
+        }
+        return debugImage;
+    }
+
     public static void clearFiles(){
+        //clear screenshot files
         File directory = new File("resources/");
+        String[] fileNames = {"screenshot", "monochrome", "rectangle", "debug"};
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
-                if (file.getName().contains("screenshot")){
-                    file.delete();
+                for (String fileName : fileNames){
+                    if (file.getName().contains(fileName)){
+                        file.delete();
+                    }
                 }
+            }
+        }
+        //clear mono files
+        directory = new File("resources/mono/");
+        files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                file.delete();
             }
         }
     }
 
-    public static BufferedImage loadImage(String filepath){
+    public static BufferedImage loadImage(String name){
+        File directory = new File("resources/");
+        File[] files = directory.listFiles();
+        for (File file : files){
+            if (file.getName().contains(name)){
+                return fullLoadImage(file.getAbsolutePath());
+            }
+        }
+        logger.error("Image not found: " + name);
+        return null;
+    }
+
+    private static BufferedImage fullLoadImage(String filepath){
+        logger.info("Loading image from: " + filepath);
         try{
             BufferedImage image = ImageIO.read(new File(filepath));
             return image;

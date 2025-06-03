@@ -9,16 +9,16 @@ import javax.imageio.ImageIO;
 
 import uk.ac.ed.inf.model.Point;
 
-public class ImageProcessor {
+public class ImageProc {
     // Get text from image
     public static String getText(BufferedImage image, Rectangle region){
-        return OCRProcessor.extractTextFromImage(image, region);
+        return OCR.getText(image, region);
     }
     public static String getText(String imagePath, Rectangle region){
         try {        
             File imageFile = new File(imagePath);
             BufferedImage fullImage = ImageIO.read(imageFile);
-            return OCRProcessor.extractTextFromImage(fullImage, region);
+            return OCR.getText(fullImage, region);
         } catch (java.io.IOException e) {
             System.out.println("Error getting text: " + e.getMessage());
             return "Error: " + e.getMessage();

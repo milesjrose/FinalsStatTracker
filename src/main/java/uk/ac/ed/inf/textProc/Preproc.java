@@ -3,7 +3,7 @@ package uk.ac.ed.inf.textProc;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
-public class ImagePreprocessor {
+public class Preproc {
 
     public static BufferedImage convertToMonochrome(BufferedImage image) {
         BufferedImage monochromeImage = new BufferedImage(
@@ -53,5 +53,13 @@ public class ImagePreprocessor {
             }
         }
         return invertedImage;
+    }
+
+    public static BufferedImage preprocessForOCR(BufferedImage image) {
+        BufferedImage monochromeImage = convertToMonochrome(image);
+        if (computeAverageLuminance(monochromeImage) > 0.5){
+            monochromeImage = invertImage(monochromeImage);
+        }
+        return monochromeImage;
     }
 }
