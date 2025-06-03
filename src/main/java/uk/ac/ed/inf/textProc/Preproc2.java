@@ -6,8 +6,6 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.RescaleOp;
 
-import uk.ac.ed.inf.utility.FileWriterUtil;
-
 public class Preproc2 {
 
     /**
@@ -221,26 +219,16 @@ public class Preproc2 {
 
         // 1. Add padding (especially if the original crop is tight)
         if (paddingAmount > 0) {
-            currentImage = addPadding(currentImage, paddingAmount, Color.BLACK); // Pad with black
+            currentImage = addPadding(currentImage, paddingAmount, Color.WHITE); // Pad with white
         }
-
-        FileWriterUtil.writeImageToFile(currentImage, "debug2_1");
 
         // 2. Scale the image (crucial for small characters)
         if (scaleFactor > 1.0) {
             currentImage = scaleImage(currentImage, scaleFactor);
         }
 
-        FileWriterUtil.writeImageToFile(currentImage, "debug2_2");
-
         // 3. Convert to Grayscale
         currentImage = toGrayscale(currentImage);
-
-        FileWriterUtil.writeImageToFile(currentImage, "debug2_3");
-
-        currentImage = binarize(currentImage, 128);
-
-        FileWriterUtil.writeImageToFile(currentImage, "debug2_3a");
 
         // 4. Ensure dark text on light background
         //    Tesseract expects black text on white background.
@@ -251,8 +239,6 @@ public class Preproc2 {
                                   // This assumes text is lighter than background in this case
             currentImage = invertGrayscaleImage(currentImage);
         }
-
-        FileWriterUtil.writeImageToFile(currentImage, "debug2_4");
 
         // After this step, we assume text is darker than background.
 

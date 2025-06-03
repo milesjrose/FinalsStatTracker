@@ -9,7 +9,8 @@ import uk.ac.ed.inf.checks.EndGameCheck;
 import uk.ac.ed.inf.model.Command;
 import uk.ac.ed.inf.model.Config;
 import uk.ac.ed.inf.model.PlayerStats;
-import uk.ac.ed.inf.textProc.OCR;
+import uk.ac.ed.inf.textProc.ImageProc;
+import uk.ac.ed.inf.textProc.Preproc3;
 import uk.ac.ed.inf.utility.FileWriterUtil;
 import uk.ac.ed.inf.utility.Screenshot;
 
@@ -27,6 +28,9 @@ public class Commands {
         commands.add("autoCheck");
         commands.add("outPutStats");
         commands.add("debug");
+        commands.add("sepchars");
+        commands.add("getText");
+        commands.add("getInt");
 
         Command command = new Command(inputString);
 
@@ -41,6 +45,9 @@ public class Commands {
                 case "autoCheck", "ac" -> autoCheck();
                 case "outPutStats", "os" -> outPutStats(command.getArgs());
                 case "debug", "d" -> addRegions(command.getArgs());
+                case "sepchars", "sc" -> separateChars(command.getArgs());
+                case "getText", "gt" -> getText(command.getArgs());
+                case "getInt", "gi" -> getInt(command.getArgs());
             }
         }
         else{
@@ -121,12 +128,20 @@ public class Commands {
 
     public static PlayerStats parseStats(BufferedImage screenshot, int player){
         System.out.println("Parsing stats...");
+        // Get regions
         Rectangle nameBox = Config.nameBox(player);
         Rectangle[] statBoxes = new Rectangle[Config.NUM_STATS];
         for (int i = 0; i < Config.NUM_STATS; i++){
             statBoxes[i] = Config.statBox(player, i);
         }
-        return new PlayerStats(OCR.getText(screenshot, nameBox), OCR.getInt(screenshot, statBoxes));
+        // Get name
+        String name = ImageProc.getText(ImageProc.crop(screenshot, nameBox));
+        //get stats
+        int[] stats = new int[Config.NUM_STATS];
+        for (int i = 0; i < Config.NUM_STATS; i++){
+            stats[i] = ImageProc.getInt(ImageProc.crop(screenshot, statBoxes[i]));
+        }
+        return new PlayerStats(name, stats);
     }
 
     public static String outPutStats(String[] args){
@@ -181,5 +196,42 @@ public class Commands {
             image = Screenshot.addRectangleToImage(image, region);
         }
         FileWriterUtil.writeImageToFile(image, "debug");
+    }
+
+    public static void separateChars(String[] args){
+        if (args.length != 1){
+            System.out.println("Invalid number of arguments");
+            return;
+        }
+        BufferedImage image = Screenshot.loadImage(args[0]);
+        Preproc3 segmenter = new Preproc3();
+        List<BufferedImage> characters = segmenter.segmentCharacters(image);
+
+        System.out.println("Found " + characters.size() + " characters.");
+
+        for (int i = 0; i < characters.size(); i++) {
+            FileWriterUtil.writeImageToFile(characters.get(i), "debug3_" + i);
+        }
+
+    }
+
+    public static void getText(String[] args){
+        if (args.length != 1){
+            System.out.println("Invalid number of arguments");
+            return;
+        }
+        BufferedImage image = Screenshot.loadImage(args[0]);
+        String text = ImageProc.getText(image);
+        System.out.println(text);
+    }
+
+    public static void getInt(String[] args){
+        if (args.length != 1){
+            System.out.println("Invalid number of arguments");
+            return;
+        }
+        BufferedImage image = Screenshot.loadImage(args[0]);
+        int number = ImageProc.getInt(image);
+        System.out.println(number);
     }
 }

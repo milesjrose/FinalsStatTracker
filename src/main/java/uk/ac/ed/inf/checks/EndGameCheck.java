@@ -40,7 +40,7 @@ public class EndGameCheck {
 
     public static boolean detailedCheck(BufferedImage image){
         // Check image proc for "summary" text.
-        String summaryText = ImageProc.getText(image, Config.summaryBox());
+        String summaryText = ImageProc.getText(ImageProc.crop(image, Config.summaryBox()));
         if (summaryText.contains("SUMMARY")){
             logger.info("Detailed check passed, summary text: {}", summaryText);
             return true;

@@ -1,0 +1,239 @@
+package uk.ac.ed.inf.textProc;
+
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+
+import nu.pattern.OpenCV;
+
+public class Preproc3 {
+
+    // Static block to load OpenCV native library using the org.openpnp loader
+    static {
+        try {
+            OpenCV.loadLocally();
+        } catch (Exception e) {
+            System.err.println("Failed to load OpenCV native library: " + e.getMessage());
+            e.printStackTrace();
+            // Depending on the application, you might want to throw a runtime exception here
+            // or have a more sophisticated error handling mechanism.
+        }
+    }
+
+    // --- Configuration for Contour Filtering ---
+    // These values are illustrative and will likely need tuning based on your specific images (font size, resolution, etc.)
+    // Values are based on the assumption of relatively small characters like in your examples.
+
+    // Minimum height of a character in pixels
+    private static final int MIN_CHAR_HEIGHT = 8;
+    // Maximum height of a character in pixels
+    private static final int MAX_CHAR_HEIGHT = 50; // Adjust based on expected max character size
+    // Minimum width of a character in pixels
+    private static final int MIN_CHAR_WIDTH = 2;
+    // Maximum width of a character in pixels
+    private static final int MAX_CHAR_WIDTH = 50; // Adjust based on expected max character size
+    // Minimum area of a character contour
+    private static final double MIN_CONTOUR_AREA = 15; // e.g., a 3x5 character
+    // Maximum area of a character contour
+    private static final double MAX_CONTOUR_AREA = 1200; // e.g., a 30x40 character
+    // Minimum aspect ratio (width / height)
+    private static final double MIN_ASPECT_RATIO = 0.1;
+    // Maximum aspect ratio (width / height)
+    private static final double MAX_ASPECT_RATIO = 2.5; // A 'W' might be wide, an 'I' or '1' narrow
+
+
+    /**
+     * Segments characters from an input BufferedImage.
+     * Assumes dark text on a light background.
+     *
+     * @param inputImage The BufferedImage containing text.
+     * @return A List of BufferedImages, each representing an individual character (black text on white background).
+     * Returns an empty list if no characters are found or if input is null.
+     */
+    public static List<BufferedImage> segmentCharacters(BufferedImage inputImage) {
+        List<BufferedImage> characterImages = new ArrayList<>();
+        if (inputImage == null) {
+            System.err.println("Input image is null.");
+            return characterImages;
+        }
+
+        // 1. Convert BufferedImage to OpenCV Mat
+        Mat originalMat = bufferedImageToMat(inputImage);
+        if (originalMat.empty()) {
+            System.err.println("Could not convert BufferedImage to Mat.");
+            return characterImages;
+        }
+
+        // 2. Preprocessing
+        Mat grayMat = new Mat();
+        Imgproc.cvtColor(originalMat, grayMat, Imgproc.COLOR_BGR2GRAY); // Assuming input is BGR
+
+        Mat blurredMat = new Mat();
+        Imgproc.GaussianBlur(grayMat, blurredMat, new Size(3, 3), 0); // Gentle blur to reduce noise
+
+        Mat binaryMat = new Mat();
+        // We want white text on black background for findContours to easily pick up objects.
+        // THRESH_OTSU helps in automatically finding an optimal global threshold.
+        Imgproc.threshold(blurredMat, binaryMat, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
+        // For more complex backgrounds, consider adaptive thresholding:
+        // Imgproc.adaptiveThreshold(blurredMat, binaryMat, 255,
+        //                           Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 5);
+
+
+        // 3. Contour Detection
+        List<MatOfPoint> contours = new ArrayList<>();
+        Mat hierarchy = new Mat();
+        // RETR_EXTERNAL retrieves only the extreme outer contours.
+        // CHAIN_APPROX_SIMPLE compresses horizontal, vertical, and diagonal segments and leaves only their end points.
+        Imgproc.findContours(binaryMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        List<Rect> McharacterBoundingBoxes = new ArrayList<>();
+
+        // 4. Filter Contours
+        for (MatOfPoint contour : contours) {
+            Rect boundingBox = Imgproc.boundingRect(contour);
+            double area = Imgproc.contourArea(contour);
+            double aspectRatio = (double) boundingBox.width / boundingBox.height;
+
+            // Apply filters
+            if (boundingBox.height >= MIN_CHAR_HEIGHT && boundingBox.height <= MAX_CHAR_HEIGHT &&
+                boundingBox.width >= MIN_CHAR_WIDTH && boundingBox.width <= MAX_CHAR_WIDTH &&
+                area >= MIN_CONTOUR_AREA && area <= MAX_CONTOUR_AREA &&
+                aspectRatio >= MIN_ASPECT_RATIO && aspectRatio <= MAX_ASPECT_RATIO) {
+                McharacterBoundingBoxes.add(boundingBox);
+            } else {
+                // Optional: Log or inspect discarded contours for debugging filter parameters
+                // System.out.println("Discarded contour: Area=" + area + " H=" + boundingBox.height + " W=" + boundingBox.width + " AR=" + aspectRatio);
+            }
+        }
+
+        if (McharacterBoundingBoxes.isEmpty()) {
+            // System.out.println("No character contours found after filtering.");
+            originalMat.release();
+            grayMat.release();
+            blurredMat.release();
+            binaryMat.release();
+            hierarchy.release();
+            return characterImages;
+        }
+
+        // 5. Sort Contours (left-to-right)
+        McharacterBoundingBoxes.sort(Comparator.comparingInt(rect -> rect.x));
+
+        // 6. Crop characters and convert to BufferedImage
+        for (Rect box : McharacterBoundingBoxes) {
+            // Crop from the binary image (which has white text on black background)
+            Mat characterMat = new Mat(binaryMat, box);
+
+            // Invert the character Mat to get black text on white background (common for OCR)
+            Mat invertedCharacterMat = new Mat();
+            Core.bitwise_not(characterMat, invertedCharacterMat);
+
+            // Add a small white border/padding (optional, but can help OCR)
+            int padding = 2; // 2 pixels padding
+            Mat paddedCharMat = new Mat(invertedCharacterMat.rows() + 2 * padding,
+                                        invertedCharacterMat.cols() + 2 * padding,
+                                        invertedCharacterMat.type(),
+                                        new Scalar(255)); // White background for padding
+
+            Rect roi = new Rect(padding, padding, invertedCharacterMat.cols(), invertedCharacterMat.rows());
+            Mat submat = paddedCharMat.submat(roi);
+            invertedCharacterMat.copyTo(submat);
+
+
+            BufferedImage charImage = matToBufferedImage(paddedCharMat, BufferedImage.TYPE_BYTE_GRAY);
+            if (charImage != null) {
+                characterImages.add(charImage);
+            }
+
+            characterMat.release();
+            invertedCharacterMat.release();
+            paddedCharMat.release();
+        }
+
+        // Release OpenCV Mats
+        originalMat.release();
+        grayMat.release();
+        blurredMat.release();
+        binaryMat.release();
+        hierarchy.release();
+
+        return characterImages;
+    }
+
+    /**
+     * Converts a BufferedImage to an OpenCV Mat.
+     *
+     * @param bi The BufferedImage to convert.
+     * @return An OpenCV Mat object.
+     */
+    private static Mat bufferedImageToMat(BufferedImage bi) {
+        byte[] data;
+        int type;
+        
+        if (bi.getType() == BufferedImage.TYPE_BYTE_GRAY) {
+            data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
+            type = CvType.CV_8UC1;
+        } else {
+            // Convert to 3-channel BGR
+            BufferedImage converted = new BufferedImage(bi.getWidth(), bi.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
+            converted.getGraphics().drawImage(bi, 0, 0, null);
+            data = ((DataBufferByte) converted.getRaster().getDataBuffer()).getData();
+            type = CvType.CV_8UC3;
+        }
+        
+        Mat mat = new Mat(bi.getHeight(), bi.getWidth(), type);
+        mat.put(0, 0, data);
+        return mat;
+    }
+
+    /**
+     * Converts an OpenCV Mat to a BufferedImage.
+     *
+     * @param mat The Mat object.
+     * @param bufferedImageType The type of BufferedImage to create (e.g., BufferedImage.TYPE_BYTE_GRAY).
+     * @return A BufferedImage.
+     */
+    private static BufferedImage matToBufferedImage(Mat mat, int bufferedImageType) {
+        if (mat.empty()) {
+            System.err.println("Cannot convert Mat to BufferedImage: Mat is empty.");
+            return null;
+        }
+
+        int width = mat.cols();
+        int height = mat.rows();
+        int channels = mat.channels();
+        
+        byte[] data = new byte[width * height * channels];
+        mat.get(0, 0, data);
+
+        BufferedImage image;
+        if (channels == 1) {
+            // Grayscale
+            image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+            byte[] grayData = new byte[width * height];
+            System.arraycopy(data, 0, grayData, 0, grayData.length);
+            image.getRaster().setDataElements(0, 0, width, height, grayData);
+        } else if (channels == 3) {
+            // BGR to RGB conversion
+            image = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+            image.getRaster().setDataElements(0, 0, width, height, data);
+        } else {
+            System.err.println("Unsupported number of channels: " + channels);
+            return null;
+        }
+
+        return image;
+    }
+}

@@ -115,12 +115,23 @@ public class Screenshot {
                 }
             }
         }
-        //clear mono files
-        directory = new File("resources/mono/");
-        files = directory.listFiles();
+        // clear other folders
+        for (String folder : new String[]{"mono", "ocr"}){
+            clearFolder(folder);
+        }
+    }
+
+    private static void clearFolder(String folder){
+        String[] fileNames = {"screenshot", "monochrome", "rectangle", "debug"};
+        File directory = new File("resources/" + folder + "/");
+        File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
-                file.delete();
+                for (String fileName : fileNames){
+                    if (file.getName().contains(fileName)){
+                        file.delete();
+                    }
+                }
             }
         }
     }

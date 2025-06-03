@@ -29,6 +29,13 @@
             <version>4.5.5</version>
         </dependency>
 
+        <!-- OpenCV: Computer vision library -->
+        <dependency>
+            <groupId>org.openpnp</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.9.0-0</version>
+        </dependency>
+
         <!-- Logging (SLF4J) -->
         <dependency>
             <groupId>org.slf4j</groupId>
