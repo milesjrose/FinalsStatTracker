@@ -16,9 +16,13 @@ import uk.ac.ed.inf.textProc.ImageProc;
 import uk.ac.ed.inf.textProc.Preproc3;
 import uk.ac.ed.inf.utility.FileUtil;
 import uk.ac.ed.inf.utility.Screenshot;
+import uk.ac.ed.inf.database.PlayerStatsDAO;
+import uk.ac.ed.inf.utility.StatParser;
 
 public class Commands {
     private static List<String> commands = new ArrayList<>();
+
+    private static PlayerStatsDAO playerStatsDAO = new PlayerStatsDAO();
 
     public static void call(String inputString){
         commands = new ArrayList<>();
@@ -35,6 +39,10 @@ public class Commands {
         commands.add("getText");
         commands.add("getInt");
         commands.add("compareChars");
+        commands.add("saveStats");
+        commands.add("loadStats");
+        commands.add("initDB");
+        commands.add("delStats");
 
         Command command = new Command(inputString);
 
@@ -53,6 +61,10 @@ public class Commands {
                 case "getText", "gt" -> getText(command.getArgs());
                 case "getInt", "gi" -> getInt(command.getArgs());
                 case "compareChars", "cc" -> compareChars(command.getArgs());
+                case "saveStats", "ss" -> saveStats(command.getArgs());
+                case "loadStats", "ls" -> loadStats(command.getArgs());
+                case "initDB", "idb" -> initDB();
+                case "delStats", "ds" -> deleteStats(command.getArgs());
             }
         }
         else{
@@ -132,21 +144,7 @@ public class Commands {
     }
 
     public static PlayerStats parseStats(BufferedImage screenshot, int player){
-        System.out.println("Parsing stats...");
-        // Get regions
-        Rectangle nameBox = Config.nameBox(player);
-        Rectangle[] statBoxes = new Rectangle[Config.NUM_STATS];
-        for (int i = 0; i < Config.NUM_STATS; i++){
-            statBoxes[i] = Config.statBox(player, i);
-        }
-        // Get name
-        String name = ImageProc.getText(ImageProc.crop(screenshot, nameBox));
-        //get stats
-        int[] stats = new int[Config.NUM_STATS];
-        for (int i = 0; i < Config.NUM_STATS; i++){
-            stats[i] = ImageProc.getInt(ImageProc.crop(screenshot, statBoxes[i]));
-        }
-        return new PlayerStats(name, stats);
+        return StatParser.parseStats(screenshot, player);
     }
 
     public static String outPutStats(String[] args){
@@ -262,4 +260,50 @@ public class Commands {
         String bestMatch = comparer.findBestMatch(unknownChar, templates);
         System.out.println("Best match: " + bestMatch);
     }
+
+    public static void saveStats(String path, int player){
+        PlayerStats stats = parseStats(Screenshot.loadImage(path), player);
+        StatParser.saveStats(stats);
+        System.out.println("Stats saved: " + stats.toString());
+    }
+
+    public static void saveStats(String[] args){
+        if (args.length != 1){
+            System.out.println("Invalid number of arguments");
+            return;
+        }
+        saveStats(args[0], 1);
+        saveStats(args[0], 2);
+        saveStats(args[0], 3);
+    }
+
+    public static void loadStats(String[] args){
+        if (args.length != 1){
+            System.out.println("Invalid number of arguments");
+            return;
+        }
+        if (args[0].equals("all")){
+            System.out.println("Loading all stats...");
+            StatParser.loadAll();
+        }
+        else{
+            PlayerStats stats = StatParser.loadStats(args[0]);
+            System.out.println("Stats loaded: " + stats.toString());
+        }
+    }
+
+    public static void initDB(){
+        System.out.println("Initializing database...");
+        PlayerStatsDAO.initialise();
+        System.out.println("Database initialized");
+    }
+
+    public static void deleteStats(String[] args){
+        if (args.length != 1){
+            System.out.println("Invalid number of arguments");
+            return;
+        }
+        StatParser.delStats(args[0]);
+    }
+
 }

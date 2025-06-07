@@ -11,6 +11,7 @@ public class PlayerStats {
     public int assists;
     public int deaths;
     public int revives;
+    public int hash;
 
     public PlayerStats(String nameString, int[] statInts){
         this.name = nameString;
@@ -24,7 +25,6 @@ public class PlayerStats {
                 statInts[i] = 0;
             }
         }
-        
         try {
             Field[] fields = PlayerStats.class.getDeclaredFields();
             // Skip the first field (name) since it's already set
@@ -35,6 +35,7 @@ public class PlayerStats {
         } catch (IllegalAccessException e) {
             System.out.println("Error setting stats: " + e.getMessage());
         }
+        this.hash = (name + combat + objective + support + elims + assists + deaths + revives).hashCode();
     }
 
     @Override
@@ -46,6 +47,7 @@ public class PlayerStats {
                "Elims: " + elims + "\n" +
                "Assists: " + assists + "\n" +
                "Deaths: " + deaths + "\n" +
-               "Revives: " + revives + "\n" + "\n";
+               "Revives: " + revives + "\n" +
+               "Hash: " + hash + "\n";
     }
 }
