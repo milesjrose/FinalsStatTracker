@@ -9,8 +9,11 @@ import java.awt.image.RescaleOp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.ed.inf.utility.FileUtil;
 
 public class Preproc2 {
+
+    public static final boolean DEBUG = true;
 
     private static final Logger logger = LoggerFactory.getLogger(Preproc2.class);
 
@@ -66,6 +69,11 @@ public class Preproc2 {
      * @return Inverted grayscale image
      */
     public static BufferedImage invertGrayscaleImage(BufferedImage grayscaleImage) {
+        if (DEBUG){
+            long tag = System.currentTimeMillis();
+            System.out.println("Inverting grayscale image");
+            FileUtil.writeImageToFile(grayscaleImage, "preproc/invert_" + tag + ".png");
+        }
         // First ensure we have a non-indexed image
         BufferedImage nonIndexedImage;
         if (grayscaleImage.getType() == BufferedImage.TYPE_BYTE_INDEXED || 
@@ -244,35 +252,75 @@ public class Preproc2 {
      * @param paddingAmount Integer of padding amount
      * @return Preprocessed image
      */
-    public static BufferedImage preprocessForOCR(BufferedImage originalImage, double scaleFactor, int paddingAmount) {
+
+    public static BufferedImage preprocessIntForOCR(BufferedImage originalImage, double scaleFactor, int paddingAmount, boolean autoInvert){
+        return preprocessForOCR(originalImage, scaleFactor, paddingAmount, autoInvert, true);
+    }
+
+    public static BufferedImage preprocessStrForOCR(BufferedImage originalImage, double scaleFactor, int paddingAmount, boolean autoInvert){
+        return preprocessForOCR(originalImage, scaleFactor, paddingAmount, autoInvert, false);
+    }
+
+    /**
+     * Main preprocessing pipeline.
+     * Aims to produce a clean, black-text-on-white-background binary image.
+     * 
+     * @param originalImage BufferedImage of image
+     * @param scaleFactor Double of scale factor
+     * @param paddingAmount Integer of padding amount
+     * @return Preprocessed image
+     */
+    public static BufferedImage preprocessForOCR(BufferedImage originalImage, double scaleFactor, int paddingAmount, boolean autoInvert, boolean isInt) {
+        if (DEBUG){
+            long tag = System.currentTimeMillis();
+            FileUtil.writeImageToFile(originalImage, "preproc/original_" + tag + ".png");
+        }
         BufferedImage currentImage = originalImage;
 
-        // 1. Add padding 
-        if (paddingAmount > 0) {
-            currentImage = addPadding(currentImage, paddingAmount, Color.WHITE); // Pad with white
-        }
-
-        // 2. Scale the image 
+        // 1. Scale the image 
         if (scaleFactor > 1.0) {
             currentImage = scaleImage(currentImage, scaleFactor);
         }
 
-        // 3. Convert to Grayscale
+        // 2. Convert to Grayscale
         currentImage = toGrayscale(currentImage);
 
-        // 4. Ensure dark text on light background
+        // 3. Ensure dark text on light background
         //    Tesseract expects black text on white background.
         //    If average intensity is low (<128), it's likely white text on dark bg, or mostly dark.
         //    An average intensity close to 0 is very dark, close to 255 is very light.
-        double avgIntensity = getAveragePixelIntensity(currentImage);
-        if (avgIntensity < 120) { // if image is mostly dark, invert it
-            currentImage = invertGrayscaleImage(currentImage);
+        // Check the top right pixel, if below threshold, invert the image
+        if (!isInt){
+            int topRight = currentImage.getRGB(currentImage.getWidth() - 21, 21) & 0xff;
+            System.out.println("Top right pixel gray value: " + (topRight& 0xff));
+            if (topRight < 120) {
+                currentImage = invertGrayscaleImage(currentImage);
+            }
+        }
+        else{
+            double avgIntensity = getAveragePixelIntensity(currentImage);
+            if (autoInvert && avgIntensity < 120) { // if image is mostly dark, invert it
+                currentImage = invertGrayscaleImage(currentImage);
+            }
+            else if (!autoInvert){
+                currentImage = invertGrayscaleImage(currentImage);
+            }
+        }
+
+
+        // 4. Add padding
+        if (paddingAmount > 0) {
+            currentImage = addPadding(currentImage, paddingAmount, Color.WHITE); // Pad with white
         }
 
 
         // 5. Binarize using Otsu's method (generally robust)
         currentImage = otsuBinarize(currentImage);
 
+        if (DEBUG){
+            long tag = System.currentTimeMillis();
+            FileUtil.writeImageToFile(currentImage, "preproc/preproc_" + tag + ".png");
+        }
         return currentImage;
     }
 }

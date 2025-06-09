@@ -12,7 +12,7 @@ import uk.ac.ed.inf.utility.FileUtil;
 
 public class OCR {
     private static final Logger logger = LoggerFactory.getLogger(OCR.class);
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     /**
      * Gets a Tesseract instance

@@ -5,10 +5,13 @@ import java.util.List;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.VBox;
+import uk.ac.ed.inf.Commands;
 import uk.ac.ed.inf.database.PlayerStatsDAO;
 import uk.ac.ed.inf.model.PlayerStats;
+import uk.ac.ed.inf.service.Service;
 
 public class PrimaryController {
 
@@ -16,6 +19,8 @@ public class PrimaryController {
     private ToggleButton dataCollectionToggle;
     @FXML
     private VBox dataContainer;
+    @FXML
+    private TextField commandInput;
 
     @FXML
     private void initialize() {
@@ -26,12 +31,19 @@ public class PrimaryController {
     private void toggleDataCollection() {
         if (dataCollectionToggle.isSelected()) {
             dataCollectionToggle.setText("Data Collection: ON");
-            // TODO: Add logic to start data collection
-            System.out.println("Data collection started.");
+            Service.startAutoProcessing();
         } else {
             dataCollectionToggle.setText("Data Collection: OFF");
-            // TODO: Add logic to stop data collection
-            System.out.println("Data collection stopped.");
+            Service.stopAutoProcessing();
+        }
+    }
+
+    @FXML
+    private void submitCommand() {
+        String command = commandInput.getText();
+        if (command != null && !command.trim().isEmpty()) {
+            Commands.call(command);
+            commandInput.clear();
         }
     }
 
@@ -52,5 +64,9 @@ public class PrimaryController {
             e.printStackTrace();
             dataContainer.getChildren().add(new Label("Error loading data from the database."));
         }
+    }
+
+    public void shutdown() {
+        Service.stopAutoProcessing();
     }
 } 

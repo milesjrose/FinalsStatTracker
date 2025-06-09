@@ -49,6 +49,10 @@ public class Screenshot {
             Robot robot = new Robot();
             java.awt.Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
             BufferedImage screenshot = robot.createScreenCapture(screenRect);
+            
+             // print screenshot size
+            System.out.println("Screenshot size: " + screenshot.getWidth() + "x" + screenshot.getHeight());
+
             return screenshot;
         } catch (AWTException e) {
             System.out.println("Error getting screenshot: " + e.getMessage());

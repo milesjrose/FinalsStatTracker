@@ -15,23 +15,26 @@ import uk.ac.ed.inf.database.PlayerStatsDAO;
 public class App extends Application {
 
     private static Scene scene;
+    private PrimaryController controller;
 
     @Override
     public void start(Stage stage) throws IOException {
         // Initialise the database
         PlayerStatsDAO.initialise();
 
-        scene = new Scene(loadFXML("primary"), 640, 480);
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("primary.fxml"));
+        Parent root = fxmlLoader.load();
+        controller = fxmlLoader.getController();
+
+        scene = new Scene(root, 640, 480);
         stage.setScene(scene);
         stage.setTitle("Finals Stat Tracker");
         stage.setMinWidth(400);
         stage.setMinHeight(300);
-        stage.show();
-    }
 
-    private static Parent loadFXML(String fxml) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
-        return fxmlLoader.load();
+        stage.setOnCloseRequest(event -> controller.shutdown());
+
+        stage.show();
     }
 
     public static void main(String[] args) {

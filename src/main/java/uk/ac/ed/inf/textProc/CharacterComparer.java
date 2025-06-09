@@ -12,6 +12,7 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import nu.pattern.OpenCV;
+import uk.ac.ed.inf.model.BestMatch;
 
 public class CharacterComparer {
 
@@ -27,7 +28,7 @@ public class CharacterComparer {
     // Standard size for all characters before comparison
     private static final Size TEMPLATE_SIZE = new Size(32, 32);
     // Similarity threshold for a confident match (tune this value)
-    private static final double SIMILARITY_THRESHOLD = 0.65; // Example: 0.0 to 1.0 for TM_CCOEFF_NORMED
+    private static final double SIMILARITY_THRESHOLD = 0.3; // Example: 0.0 to 1.0 for TM_CCOEFF_NORMED
 
     /**
      * Converts a BufferedImage to a grayscale OpenCV Mat (CV_8UC1).
@@ -73,7 +74,7 @@ public class CharacterComparer {
      * and the value is the template BufferedImage.
      * @return The label of the best matching character, or null if no confident match is found.
      */
-    public String findBestMatch(BufferedImage unknownCharacterBI, Map<String, BufferedImage> templateBIs) {
+    public BestMatch findBestMatch(BufferedImage unknownCharacterBI, Map<String, BufferedImage> templateBIs) {
         if (unknownCharacterBI == null) {
             System.err.println("Unknown character BufferedImage is null.");
             return null;
@@ -151,17 +152,10 @@ public class CharacterComparer {
         // Release Mats created outside the loop
         unknownCharMatFull.release();
         unknownCharMatResized.release();
-
-        if (bestMatchLabel != null && bestScore >= SIMILARITY_THRESHOLD) {
-            // System.out.println("Confident match: " + bestMatchLabel + " with score: " + bestScore);
-            return bestMatchLabel;
-        } else {
-             if (bestMatchLabel != null) {
-                System.out.println("Match for '" + bestMatchLabel + "' below threshold. Score: " + bestScore);
-             } else {
-                System.out.println("No suitable match found.");
-             }
-            return null; // No confident match
+        
+        if (bestScore < SIMILARITY_THRESHOLD){
+            return new BestMatch("com", 0.0);
         }
+        return new BestMatch(bestMatchLabel, bestScore);
     }
 }

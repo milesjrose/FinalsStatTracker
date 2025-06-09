@@ -4,14 +4,22 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uk.ac.ed.inf.ui.PrimaryController">
+<VBox alignment="CENTER" spacing="10.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uk.ac.ed.inf.ui.PrimaryController">
     <children>
         <Label text="Finals Stat Tracker" />
         <ToggleButton fx:id="dataCollectionToggle" mnemonicParsing="false" onAction="#toggleDataCollection" text="Data Collection: OFF" />
         <Button fx:id="showDataButton" mnemonicParsing="false" onAction="#showData" text="Show Data" />
+        <HBox alignment="CENTER" spacing="10.0">
+            <children>
+                <TextField fx:id="commandInput" HBox.hgrow="ALWAYS" />
+                <Button fx:id="submitCommandButton" mnemonicParsing="false" onAction="#submitCommand" text="Submit" />
+            </children>
+        </HBox>
         <ScrollPane fx:id="dataScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS">
             <content>
                 <VBox fx:id="dataContainer" spacing="5.0" />

@@ -7,7 +7,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.ed.inf.utility.FileUtil;
+import uk.ac.ed.inf.model.BestMatch;
+import uk.ac.ed.inf.utility.FileUtil;   
 
 
 public class ImageProc {
@@ -21,13 +22,51 @@ public class ImageProc {
      */
     public static String getText(BufferedImage image){
         // Preprocess image
-        image = preprocess(image);
+        image = preprocStrForOCR(image);
         // Return text
         try {
             return OCR.getText(image);
         } catch (Exception e) {
             logger.error("Error getting text from image", e);
             return null;
+        }
+    }
+
+    public static String getSummaryText(BufferedImage image){
+        // Preprocess image
+        image = Preproc2.preprocessForOCR(image, 2, 20, false, true);
+        // Return text
+        return OCR.getText(image);
+    }
+
+    public static int getIntComp(BufferedImage image){
+        // Preprocess image
+        image = preprocess(image);
+
+        // Split chars
+        List<BufferedImage> chrs = segmentChars(image);
+        if (chrs.isEmpty()){
+            System.out.println("No characters found");
+            return 0;
+        }
+
+        // Get strings
+        String result = "";
+        for (BufferedImage chr : chrs){
+            // Preprocess image
+            BufferedImage preChr = preprocessIntForOCR(chr);
+            String bestMatch = compareChars(preChr);
+            if (!bestMatch.equals("com")){
+                result += bestMatch;
+            }
+        }
+
+        // Convert to int and return
+        try {
+            return Integer.parseInt(result);
+        } catch (NumberFormatException e){
+            logger.error("Error parsing int: " + result);
+            return 0;
         }
     }
 
@@ -53,7 +92,7 @@ public class ImageProc {
         String result = "";
         for (BufferedImage chr : chrs){
             // Preprocess image
-            BufferedImage preChr = preprocessForOCR(chr);
+            BufferedImage preChr = preprocessIntForOCR(chr);
             String res = OCR.getInt(preChr);
             if (res.isEmpty()){
                 String bestMatch = compareChars(preChr);
@@ -87,9 +126,13 @@ public class ImageProc {
 
         // Compare unknown character to templates
         CharacterComparer comparer = new CharacterComparer();
-        String bestMatch = comparer.findBestMatch(unknownChar, templates);
-        System.out.println("Best match: " + bestMatch);
-        return bestMatch;
+        BestMatch bestMatch = comparer.findBestMatch(unknownChar, templates);
+        System.out.println("Best match: " + bestMatch.getLabel() + " with score: " + bestMatch.getScore());
+        if (bestMatch.getScore() < 0.55){
+            // save image for reference
+            FileUtil.writeImageToFile(unknownChar, "unknownChar-" + bestMatch.getLabel() + "-" + bestMatch.getScore() + ".png");
+        }
+        return bestMatch.getLabel();
     }
 
     /**
@@ -110,9 +153,21 @@ public class ImageProc {
      * @param image BufferedImage of image
      * @return Preprocessed image
      */
-    private static BufferedImage preprocessForOCR(BufferedImage image){
+    private static BufferedImage preprocessIntForOCR(BufferedImage image){
         // Preprocess image
-        image = Preproc2.preprocessForOCR(image, 2, 10);
+        image = Preproc2.preprocessIntForOCR(image, 2, 20, true);
+        return image;
+    }
+
+    /**
+     * Preprocesses an image for OCR without inverting
+     * 
+     * @param image BufferedImage of image
+     * @return Preprocessed image
+     */
+    private static BufferedImage preprocStrForOCR(BufferedImage image){
+        // Preprocess image
+        image = Preproc2.preprocessStrForOCR(image, 2, 20, false);
         return image;
     }
 
